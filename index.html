@@ -1,4 +1,24 @@
-<script>
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Boda 💍</title>
+</head>
+
+<body style="font-family: sans-serif; text-align:center; padding:20px;">
+
+  <h1>📸 Sube tus fotos de la boda</h1>
+
+  <!-- ESTO ES LO QUE TE FALTA -->
+  <input id="file" type="file" accept="image/*" multiple />
+  <br><br>
+
+  <button onclick="upload()">Subir fotos</button>
+
+  <p id="status"></p>
+
+  <script>
     const URL = "https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/upload-photo";
     const TOKEN = "3pVW7QPJYJ9ljpf6RGdHqcgDzuWUyKxLVmok3QIfeFQRZZPZtvYFSI7vu9mWDi6u";
 
@@ -31,5 +51,6 @@
       status.innerText = "¡Fotos subidas! 🎉 Gracias ❤️";
     }
   </script>
+
 </body>
 </html>
