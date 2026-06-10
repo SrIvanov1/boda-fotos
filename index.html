@@ -1,0 +1,35 @@
+<script>
+    const URL = "https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/upload-photo";
+    const TOKEN = "3pVW7QPJYJ9ljpf6RGdHqcgDzuWUyKxLVmok3QIfeFQRZZPZtvYFSI7vu9mWDi6u";
+
+    async function upload() {
+      const files = document.getElementById("file").files;
+      const status = document.getElementById("status");
+
+      if (!files.length) {
+        status.innerText = "Selecciona fotos primero 📷";
+        return;
+      }
+
+      status.innerText = "Subiendo... ⏳";
+
+      for (let file of files) {
+        const form = new FormData();
+        form.append("file", file);
+
+        const res = await fetch(URL, {
+          method: "POST",
+          headers: {
+            "x-upload-token": TOKEN
+          },
+          body: form
+        });
+
+        await res.text();
+      }
+
+      status.innerText = "¡Fotos subidas! 🎉 Gracias ❤️";
+    }
+  </script>
+</body>
+</html>
