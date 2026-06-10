@@ -3,201 +3,81 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Boda 💍 - Fotos</title>
+  <title>Boda 💍</title>
 
   <style>
     body {
       font-family: sans-serif;
-      text-align: center;
-      padding: 20px;
+      margin: 0;
       background: #fafafa;
+      text-align: center;
     }
 
-    .dropzone {
-      border: 2px dashed #aaa;
-      padding: 20px;
-      border-radius: 12px;
+    .container {
+      padding: 40px 20px;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .card {
       background: white;
-    }
-
-    .preview {
-      margin-top: 15px;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    .item {
-      position: relative;
-      width: 100px;
-    }
-
-    .item img {
-      width: 100px;
-      height: 100px;
-      object-fit: cover;
-      border-radius: 10px;
-    }
-
-    .remove {
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      background: red;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 26px;
-      height: 26px;
+      padding: 20px;
+      margin: 15px auto;
+      max-width: 320px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
       cursor: pointer;
-    
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    
-      font-size: 16px;
-      line-height: 1;
-      padding: 0;
+      transition: 0.2s;
     }
 
-    button {
-      margin-top: 15px;
-      padding: 12px 18px;
-      border: none;
-      background: black;
-      color: white;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 16px;
+    .card:hover {
+      transform: scale(1.03);
     }
 
-    .progress {
-      width: 100%;
-      height: 10px;
-      background: #eee;
-      border-radius: 10px;
-      overflow: hidden;
-      margin-top: 10px;
+    .emoji {
+      font-size: 40px;
     }
 
-    .bar {
-      height: 100%;
-      width: 0%;
-      background: #4caf50;
-      transition: width 0.2s;
+    a {
+      text-decoration: none;
+      color: inherit;
     }
   </style>
 </head>
 
 <body>
 
-<h1>📸 Sube tus fotos de la boda</h1>
+<div class="container">
 
-<div class="dropzone" id="dropzone">
-  <p>Arrastra fotos aquí o selecciónalas 👇</p>
-  <input type="file" id="file" accept="image/*" multiple />
+  <h1>💍 Nuestra boda</h1>
+  <p>Comparte o mira las fotos del gran día</p>
+
+  <!-- SUBIR FOTOS -->
+  <a href="upload.html">
+    <div class="card">
+      <div class="emoji">📤</div>
+      <h2>Subir fotos</h2>
+      <p>Haz fotos y compártelas con nosotros</p>
+    </div>
+  </a>
+
+  <!-- GALERÍA -->
+  <a href="gallery.html">
+    <div class="card">
+      <div class="emoji">🖼</div>
+      <h2>Ver galería</h2>
+      <p>Mira todas las fotos de los invitados</p>
+    </div>
+  </a>
+
 </div>
-
-<div class="preview" id="preview"></div>
-
-<div class="progress">
-  <div class="bar" id="bar"></div>
-</div>
-
-<button onclick="upload()">Subir fotos</button>
-
-<p id="status"></p>
-
-<script>
-const URL = "https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/upload-photo";
-const TOKEN = "3pVW7QPJYJ9ljpf6RGdHqcgDzuWUyKxLVmok3QIfeFQRZZPZtvYFSI7vu9mWDi6u";
-
-let selectedFiles = [];
-
-const input = document.getElementById("file");
-const preview = document.getElementById("preview");
-const status = document.getElementById("status");
-const bar = document.getElementById("bar");
-const dropzone = document.getElementById("dropzone");
-
-input.addEventListener("change", (e) => {
-  addFiles(e.target.files);
-});
-
-dropzone.addEventListener("dragover", (e) => {
-  e.preventDefault();
-});
-
-dropzone.addEventListener("drop", (e) => {
-  e.preventDefault();
-  addFiles(e.dataTransfer.files);
-});
-
-function addFiles(files) {
-  selectedFiles = selectedFiles.concat(Array.from(files));
-  render();
-}
-
-function render() {
-  preview.innerHTML = "";
-
-  selectedFiles.forEach((file, index) => {
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      const div = document.createElement("div");
-      div.className = "item";
-
-      div.innerHTML = `
-        <img src="${e.target.result}" />
-        <button class="remove" onclick="removeFile(${index})">×</button>
-      `;
-
-      preview.appendChild(div);
-    };
-
-    reader.readAsDataURL(file);
-  });
-}
-
-function removeFile(index) {
-  selectedFiles.splice(index, 1);
-  render();
-}
-
-async function upload() {
-  if (!selectedFiles.length) {
-    status.innerText = "Selecciona fotos primero 📷";
-    return;
-  }
-
-  status.innerText = "Subiendo... ⏳";
-  bar.style.width = "0%";
-
-  for (let i = 0; i < selectedFiles.length; i++) {
-    const file = selectedFiles[i];
-
-    const form = new FormData();
-    form.append("file", file);
-
-    await fetch(URL, {
-      method: "POST",
-      headers: {
-        "x-upload-token": TOKEN
-      },
-      body: form
-    });
-
-    const progress = ((i + 1) / selectedFiles.length) * 100;
-    bar.style.width = progress + "%";
-  }
-
-  status.innerText = "¡Fotos subidas! 🎉 Gracias ❤️";
-  selectedFiles = [];
-  preview.innerHTML = "";
-}
-</script>
 
 </body>
 </html>
