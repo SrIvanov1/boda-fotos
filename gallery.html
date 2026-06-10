@@ -34,20 +34,25 @@
     .item {
       break-inside: avoid;
       margin-bottom: 8px;
-      cursor: pointer;
     }
 
     .item img {
       width: 100%;
       border-radius: 10px;
       display: block;
+      cursor: pointer;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #777;
     }
 
     /* LIGHTBOX */
     .lightbox {
       position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      inset: 0;
       background: rgba(0,0,0,0.9);
       display: none;
       align-items: center;
@@ -68,6 +73,7 @@
 <h1>📸 Nuestra boda</h1>
 
 <div class="grid" id="grid"></div>
+<div class="loading" id="loading">Cargando fotos... ⏳</div>
 
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <img id="lightboxImg" />
@@ -77,16 +83,18 @@
 const SUPABASE_URL = "https://uceerskxdlwoyzwenzrm.supabase.co";
 const BUCKET = "fotos-boda";
 
+let offset = 0;
+const limit = 30;
+let loading = false;
+
 async function loadImages() {
+  if (loading) return;
+  loading = true;
+
   const res = await fetch(`${SUPABASE_URL}/storage/v1/object/list/${BUCKET}`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      limit: 100,
-      offset: 0
-    })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ limit, offset })
   });
 
   const data = await res.json();
@@ -103,7 +111,21 @@ async function loadImages() {
 
     grid.appendChild(div);
   });
+
+  offset += limit;
+  loading = false;
+
+  if (data.length < limit) {
+    document.getElementById("loading").innerText = "Fin de la galería ❤️";
+  }
 }
+
+// infinite scroll simple
+window.addEventListener("scroll", () => {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+    loadImages();
+  }
+});
 
 function openLightbox(url) {
   document.getElementById("lightboxImg").src = url;
