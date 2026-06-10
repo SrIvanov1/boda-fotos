@@ -13,6 +13,13 @@
       background: #fafafa;
     }
 
+    .dropzone {
+      border: 2px dashed #aaa;
+      padding: 20px;
+      border-radius: 12px;
+      background: white;
+    }
+
     .preview {
       margin-top: 15px;
       display: flex;
@@ -48,12 +55,29 @@
 
     button {
       margin-top: 15px;
-      padding: 10px 15px;
+      padding: 12px 18px;
       border: none;
       background: black;
       color: white;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
+      font-size: 16px;
+    }
+
+    .progress {
+      width: 100%;
+      height: 10px;
+      background: #eee;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: #4caf50;
+      transition: width 0.2s;
     }
   </style>
 </head>
@@ -62,13 +86,20 @@
 
 <h1>📸 Sube tus fotos de la boda</h1>
 
-<input type="file" id="file" accept="image/*" multiple />
-<br>
+<div class="dropzone" id="dropzone">
+  <p>Arrastra fotos aquí o selecciónalas 👇</p>
+  <input type="file" id="file" accept="image/*" multiple />
+</div>
+
+<div class="preview" id="preview"></div>
+
+<div class="progress">
+  <div class="bar" id="bar"></div>
+</div>
+
 <button onclick="upload()">Subir fotos</button>
 
 <p id="status"></p>
-
-<div class="preview" id="preview"></div>
 
 <script>
 const URL = "https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/upload-photo";
@@ -76,14 +107,32 @@ const TOKEN = "3pVW7QPJYJ9ljpf6RGdHqcgDzuWUyKxLVmok3QIfeFQRZZPZtvYFSI7vu9mWDi6u"
 
 let selectedFiles = [];
 
-document.getElementById("file").addEventListener("change", (e) => {
-  selectedFiles = Array.from(e.target.files);
-  renderPreview();
+const input = document.getElementById("file");
+const preview = document.getElementById("preview");
+const status = document.getElementById("status");
+const bar = document.getElementById("bar");
+const dropzone = document.getElementById("dropzone");
+
+input.addEventListener("change", (e) => {
+  addFiles(e.target.files);
 });
 
-function renderPreview() {
-  const container = document.getElementById("preview");
-  container.innerHTML = "";
+dropzone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+});
+
+dropzone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  addFiles(e.dataTransfer.files);
+});
+
+function addFiles(files) {
+  selectedFiles = selectedFiles.concat(Array.from(files));
+  render();
+}
+
+function render() {
+  preview.innerHTML = "";
 
   selectedFiles.forEach((file, index) => {
     const reader = new FileReader();
@@ -97,7 +146,7 @@ function renderPreview() {
         <button class="remove" onclick="removeFile(${index})">×</button>
       `;
 
-      container.appendChild(div);
+      preview.appendChild(div);
     };
 
     reader.readAsDataURL(file);
@@ -106,24 +155,25 @@ function renderPreview() {
 
 function removeFile(index) {
   selectedFiles.splice(index, 1);
-  renderPreview();
+  render();
 }
 
 async function upload() {
-  const status = document.getElementById("status");
-
   if (!selectedFiles.length) {
     status.innerText = "Selecciona fotos primero 📷";
     return;
   }
 
   status.innerText = "Subiendo... ⏳";
+  bar.style.width = "0%";
 
-  for (let file of selectedFiles) {
+  for (let i = 0; i < selectedFiles.length; i++) {
+    const file = selectedFiles[i];
+
     const form = new FormData();
     form.append("file", file);
 
-    const res = await fetch(URL, {
+    await fetch(URL, {
       method: "POST",
       headers: {
         "x-upload-token": TOKEN
@@ -131,12 +181,13 @@ async function upload() {
       body: form
     });
 
-    await res.text();
+    const progress = ((i + 1) / selectedFiles.length) * 100;
+    bar.style.width = progress + "%";
   }
 
   status.innerText = "¡Fotos subidas! 🎉 Gracias ❤️";
   selectedFiles = [];
-  document.getElementById("preview").innerHTML = "";
+  preview.innerHTML = "";
 }
 </script>
 
