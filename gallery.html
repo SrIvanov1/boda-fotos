@@ -1,142 +1,212 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Boda 💍 - Galería</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
-  <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      background: #fafafa;
-    }
+<title>💍 Galería de la boda</title>
 
-    h1 {
-      text-align: center;
-      padding: 15px;
-    }
+<style>
 
-    .grid {
-      column-count: 3;
-      column-gap: 8px;
-      padding: 8px;
-    }
+body{
+  margin:0;
+  background:#fafafa;
+  font-family:sans-serif;
+}
 
-    @media (max-width: 800px) {
-      .grid { column-count: 2; }
-    }
+h1{
+  text-align:center;
+  padding:15px;
+}
 
-    @media (max-width: 500px) {
-      .grid { column-count: 1; }
-    }
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:10px;
+  padding:10px;
+}
 
-    .item {
-      break-inside: avoid;
-      margin-bottom: 8px;
-    }
+.card{
+  background:white;
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 2px 10px rgba(0,0,0,.1);
+}
 
-    .item img {
-      width: 100%;
-      border-radius: 10px;
-      display: block;
-      cursor: pointer;
-    }
+.card img,
+.card video{
+  width:100%;
+  display:block;
+}
 
-    .loading {
-      text-align: center;
-      padding: 20px;
-      color: #777;
-    }
+.actions{
+  padding:10px;
+  text-align:center;
+}
 
-    /* LIGHTBOX */
-    .lightbox {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.9);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
+.download{
+  text-decoration:none;
+  background:black;
+  color:white;
+  padding:8px 12px;
+  border-radius:8px;
+  display:inline-block;
+}
 
-    .lightbox img {
-      max-width: 90%;
-      max-height: 90%;
-      border-radius: 10px;
-    }
-  </style>
+.lightbox{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.9);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+}
+
+.lightbox img,
+.lightbox video{
+  max-width:95%;
+  max-height:95%;
+}
+
+.close{
+  position:absolute;
+  top:15px;
+  right:15px;
+  width:40px;
+  height:40px;
+  border:none;
+  border-radius:50%;
+  background:white;
+  font-size:24px;
+  cursor:pointer;
+}
+
+</style>
 </head>
 
 <body>
 
 <h1>📸 Nuestra boda</h1>
 
-<div class="grid" id="grid"></div>
-<div class="loading" id="loading">Cargando fotos... ⏳</div>
+<div id="gallery" class="grid"></div>
 
-<div class="lightbox" id="lightbox" onclick="closeLightbox()">
-  <img id="lightboxImg" />
+<div id="lightbox" class="lightbox">
+
+<button class="close" onclick="closeLightbox()">
+×
+</button>
+
+<div id="viewer"></div>
+
 </div>
 
 <script>
-const SUPABASE_URL = "https://uceerskxdlwoyzwenzrm.supabase.co";
-const BUCKET = "fotos-boda";
 
-let offset = 0;
-const limit = 30;
-let loading = false;
+const API =
+"https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/gallery-files";
 
-async function loadImages() {
-  if (loading) return;
-  loading = true;
+async function loadGallery(){
 
-  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/list/${BUCKET}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ limit, offset })
+  const res = await fetch(API);
+
+  const files = await res.json();
+
+  const gallery =
+    document.getElementById("gallery");
+
+  gallery.innerHTML = "";
+
+  files.forEach(file=>{
+
+    const card =
+      document.createElement("div");
+
+    card.className = "card";
+
+    let media = "";
+
+    if(file.isVideo){
+
+      media = `
+      <video
+        controls
+        preload="metadata"
+        onclick="openVideo('${file.url}')"
+      >
+        <source src="${file.url}">
+      </video>
+      `;
+
+    }else{
+
+      media = `
+      <img
+        src="${file.url}"
+        onclick="openImage('${file.url}')"
+      >
+      `;
+
+    }
+
+    card.innerHTML = `
+      ${media}
+
+      <div class="actions">
+        <a
+          class="download"
+          href="${file.url}"
+          download
+        >
+          ⬇ Descargar
+        </a>
+      </div>
+    `;
+
+    gallery.appendChild(card);
+
   });
 
-  const data = await res.json();
-
-  const grid = document.getElementById("grid");
-
-  data.forEach(file => {
-    const url = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${file.name}`;
-
-    const div = document.createElement("div");
-    div.className = "item";
-
-    div.innerHTML = `<img src="${url}" onclick="openLightbox('${url}')">`;
-
-    grid.appendChild(div);
-  });
-
-  offset += limit;
-  loading = false;
-
-  if (data.length < limit) {
-    document.getElementById("loading").innerText = "Fin de la galería ❤️";
-  }
 }
 
-// infinite scroll simple
-window.addEventListener("scroll", () => {
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
-    loadImages();
-  }
-});
+function openImage(url){
 
-function openLightbox(url) {
-  document.getElementById("lightboxImg").src = url;
-  document.getElementById("lightbox").style.display = "flex";
+  document.getElementById("viewer").innerHTML = `
+    <img src="${url}">
+  `;
+
+  document.getElementById("lightbox")
+    .style.display = "flex";
 }
 
-function closeLightbox() {
-  document.getElementById("lightbox").style.display = "none";
+function openVideo(url){
+
+  document.getElementById("viewer").innerHTML = `
+    <video
+      controls
+      autoplay
+      style="max-width:95vw;max-height:95vh"
+    >
+      <source src="${url}">
+    </video>
+  `;
+
+  document.getElementById("lightbox")
+    .style.display = "flex";
 }
 
-loadImages();
+function closeLightbox(){
+
+  document.getElementById("lightbox")
+    .style.display = "none";
+
+  document.getElementById("viewer")
+    .innerHTML = "";
+
+}
+
+loadGallery();
+
 </script>
 
 </body>
