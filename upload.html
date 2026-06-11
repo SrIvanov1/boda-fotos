@@ -140,7 +140,20 @@ dropzone.addEventListener("drop", (e) => {
 });
 
 function addFiles(files) {
-  selectedFiles = selectedFiles.concat(Array.from(files));
+
+  const incoming = Array.from(files);
+
+  if (
+    selectedFiles.length +
+    incoming.length > 10
+  ) {
+    alert("Máximo 10 archivos");
+    return;
+  }
+
+  selectedFiles =
+    selectedFiles.concat(incoming);
+
   render();
 }
 
