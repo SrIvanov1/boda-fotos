@@ -209,7 +209,8 @@ async function upload() {
     await fetch(URL, {
       method: "POST",
       headers: {
-        "x-upload-token": TOKEN
+        "x-upload-token": TOKEN,
+        "x-boda-auth": sessionStorage.getItem("boda_auth")
       },
       body: form
     });
