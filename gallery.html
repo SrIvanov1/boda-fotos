@@ -98,19 +98,31 @@ h1{
 
 <h1>📸 Nuestra boda</h1>
 
-<div style="padding:10px; text-align:center;">
+<div style="
+  padding:10px;
+  text-align:center;
+  position:sticky;
+  top:0;
+  background:#fafafa;
+  z-index:100;
+">
+  
   <p style="color:#666;font-size:14px">
     Puedes descargar una foto individual o seleccionar varias para descargarlas juntas.
   </p>
   
-  <p id="selectedCount">0 seleccionados</p>
+  <p id="selectedCount" style="font-weight:bold; margin:10px 0;">
+    ☑ 0 fotos seleccionadas
+  </p>
 
   <button onclick="downloadSelected()">
     ⬇ Descargar seleccionados
   </button>
+  
   <button onclick="clearSelection()">
     ❌ Deseleccionar todo
   </button>
+
 </div>
 
 <div id="gallery" class="grid"></div>
@@ -255,7 +267,8 @@ function clearSelection() {
     cb.checked = false;
   });
 
-  document.getElementById("selectedCount").innerText = "0 seleccionados";
+  document.getElementById("selectedCount").innerText =
+    "☑ 0 archivos seleccionados";
 }
 
 async function downloadFile(url, filename) {
@@ -295,7 +308,7 @@ function toggleSelect(url, checked) {
   }
 
   document.getElementById("selectedCount").innerText =
-    `${selected.size} seleccionados`;
+    `☑ ${selected.size} archivos seleccionados`;
 }
 
 async function downloadSelected() {
@@ -319,6 +332,8 @@ async function downloadSelected() {
     await downloadFile(file.url, file.name);
     await new Promise(r => setTimeout(r, 400));
   }
+
+  clearSelection();
 }
 
 loadGallery();
