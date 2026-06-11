@@ -109,7 +109,11 @@ const API =
 
 async function loadGallery(){
 
-  const res = await fetch(API);
+  const res = await fetch(API, {
+    headers: {
+      "x-boda-auth": sessionStorage.getItem("boda_auth")
+    }
+  });
 
   const files = await res.json();
 
@@ -239,4 +243,3 @@ loadGallery();
 
 </body>
 </html>
-
