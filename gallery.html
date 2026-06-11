@@ -130,10 +130,16 @@ async function loadGallery(){
 
   const res = await fetch(API, {
     headers: {
-      "x-boda-auth": sessionStorage.getItem("boda_auth")
+      "x-boda-auth": sessionStorage.getItem("boda_auth") || "none"
     }
   });
-
+  
+  if (!res.ok) {
+    const err = await res.text();
+    console.error("GALERÍA ERROR:", err);
+    return;
+  }
+  
   const files = await res.json();
 
   const gallery =
@@ -305,4 +311,3 @@ loadGallery();
 
 </body>
 </html>
-
