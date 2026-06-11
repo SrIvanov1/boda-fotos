@@ -49,35 +49,117 @@
       text-decoration: none;
       color: inherit;
     }
+
+    input {
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      background: black;
+      color: white;
+      cursor: pointer;
+    }
+
+    #loginError {
+      color: red;
+      margin-top: 10px;
+    }
   </style>
 </head>
 
 <body>
 
-<div class="container">
+<!-- LOGIN -->
+<div id="loginScreen">
 
   <h1>💍 Nuestra boda</h1>
-  <p>Comparte o mira las fotos del gran día</p>
 
-  <!-- SUBIR FOTOS -->
-  <a href="upload.html">
-    <div class="card">
-      <div class="emoji">📤</div>
-      <h2>Subir fotos</h2>
-      <p>Haz fotos y compártelas con nosotros</p>
-    </div>
-  </a>
+  <p>Introduce la contraseña</p>
 
-  <!-- GALERÍA -->
-  <a href="gallery.html">
-    <div class="card">
-      <div class="emoji">🖼</div>
-      <h2>Ver galería</h2>
-      <p>Mira todas las fotos de los invitados</p>
-    </div>
-  </a>
+  <input type="password" id="password" placeholder="Contraseña">
+
+  <br>
+
+  <button onclick="login()">Entrar</button>
+
+  <p id="loginError"></p>
 
 </div>
+
+<!-- CONTENIDO -->
+<div id="siteContent" style="display:none">
+
+  <div class="container">
+
+    <h1>💍 Nuestra boda</h1>
+    <p>Comparte o mira las fotos del gran día</p>
+
+    <a href="upload.html">
+      <div class="card">
+        <div class="emoji">📤</div>
+        <h2>Subir fotos</h2>
+        <p>Haz fotos y compártelas con nosotros</p>
+      </div>
+    </a>
+
+    <a href="gallery.html">
+      <div class="card">
+        <div class="emoji">🖼</div>
+        <h2>Ver galería</h2>
+        <p>Mira todas las fotos de los invitados</p>
+      </div>
+    </a>
+
+  </div>
+
+</div>
+
+<script>
+
+const LOGIN_URL =
+"https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/login";
+
+/* si ya está logueado */
+if (sessionStorage.getItem("boda_auth") === "ok") {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("siteContent").style.display = "block";
+}
+
+async function login() {
+
+  const password = document.getElementById("password").value;
+
+  const res = await fetch(LOGIN_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ password })
+  });
+
+  if (res.ok) {
+
+    sessionStorage.setItem("boda_auth", "ok");
+
+    location.reload();
+
+  } else {
+
+    document.getElementById("loginError").innerText =
+      "❌ Contraseña incorrecta";
+
+  }
+}
+
+</script>
 
 </body>
 </html>
