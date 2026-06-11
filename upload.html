@@ -147,7 +147,8 @@ function addFiles(files) {
     selectedFiles.length +
     incoming.length > 10
   ) {
-    alert("Máximo 10 archivos");
+    status.innerText =
+      "⚠️ Máximo 10 archivos por subida";
     return;
   }
 
