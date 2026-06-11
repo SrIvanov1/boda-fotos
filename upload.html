@@ -122,6 +122,35 @@
 if (sessionStorage.getItem("boda_auth") !== "ok") {
   window.location.href = "index.html";
 }
+
+const auth =
+  sessionStorage.getItem("boda_auth");
+
+const authTime =
+  Number(
+    sessionStorage.getItem("boda_auth_time")
+  );
+
+const MAX_AGE =
+  12 * 60 * 60 * 1000; // 12 horas
+
+if (
+  auth !== "ok" ||
+  !authTime ||
+  Date.now() - authTime > MAX_AGE
+) {
+
+  sessionStorage.clear();
+
+  window.location.href = "index.html";
+
+}
+
+sessionStorage.setItem(
+  "boda_auth_time",
+  Date.now()
+);
+
 const URL = "https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/upload-photo";
 const TOKEN = "Hl2GHLcUPXQxI0yez1KDbdg3ULkgcFOlLdXLuhxeaEaBk3W6jxgamcwz7UF8ct3F";
 
@@ -234,3 +263,4 @@ async function upload() {
 
 </body>
 </html>
+
