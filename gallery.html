@@ -246,14 +246,13 @@ function closeLightbox(){
 }
 
 function clearSelection() {
-  selected = [];
+  selectedFiles = [];
+
+  document.getElementById("selectedCount").innerText = "0 seleccionados";
 
   document.querySelectorAll(".selector").forEach(cb => {
     cb.checked = false;
   });
-
-  const counter = document.getElementById("selectedCount");
-  if (counter) counter.innerText = "0 seleccionados";
 }
 
 async function downloadFile(url, filename) {
@@ -316,6 +315,13 @@ async function downloadSelected() {
     await downloadFile(file.url, file.name);
     await new Promise(r => setTimeout(r, 400));
   }
+}
+
+function updateSelectedCount() {
+  const count = selectedFiles ? selectedFiles.length : 0;
+
+  const el = document.getElementById("selectedCount");
+  if (el) el.innerText = `${count} seleccionados`;
 }
 
 loadGallery();
