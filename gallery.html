@@ -45,12 +45,13 @@ h1{
 }
 
 .download{
-  text-decoration:none;
   background:black;
   color:white;
+  border:none;
   padding:8px 12px;
   border-radius:8px;
-  display:inline-block;
+  cursor:pointer;
+  font-size:14px;
 }
 
 .lightbox{
@@ -153,13 +154,12 @@ async function loadGallery(){
       ${media}
 
       <div class="actions">
-        <a
+        <button
           class="download"
-          href="${file.url}"
-          target="_blank"
+          onclick="downloadFile('${file.url}','${file.name}')"
         >
           ⬇ Descargar
-        </a>
+        </button>
       </div>
     `;
 
@@ -205,9 +205,38 @@ function closeLightbox(){
 
 }
 
+async function downloadFile(url, filename) {
+  try {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error("Error descargando archivo");
+    }
+
+    const blob = await response.blob();
+
+    const objectUrl = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename;
+
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    window.URL.revokeObjectURL(objectUrl);
+
+  } catch (e) {
+    alert("No se pudo descargar el archivo");
+    console.error(e);
+  }
+}
+
 loadGallery();
 
 </script>
 
 </body>
 </html>
+
