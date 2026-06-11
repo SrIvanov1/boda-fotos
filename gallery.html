@@ -243,7 +243,17 @@ function closeLightbox(){
 
   document.getElementById("viewer")
     .innerHTML = "";
+}
 
+function clearSelection() {
+  selected = [];
+
+  document.querySelectorAll(".selector").forEach(cb => {
+    cb.checked = false;
+  });
+
+  const counter = document.getElementById("selectedCount");
+  if (counter) counter.innerText = "0 seleccionados";
 }
 
 async function downloadFile(url, filename) {
@@ -306,16 +316,6 @@ async function downloadSelected() {
     await downloadFile(file.url, file.name);
     await new Promise(r => setTimeout(r, 400));
   }
-}
-
-function clearSelection() {
-  selectedFiles = [];
-
-  document.querySelectorAll(".selector").forEach(cb => {
-    cb.checked = false;
-  });
-
-  updateSelectedCount();
 }
 
 loadGallery();
