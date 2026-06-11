@@ -308,6 +308,16 @@ async function downloadSelected() {
   }
 }
 
+function clearSelection() {
+  selectedFiles = [];
+
+  document.querySelectorAll(".selector").forEach(cb => {
+    cb.checked = false;
+  });
+
+  updateSelectedCount();
+}
+
 loadGallery();
 
 </script>
