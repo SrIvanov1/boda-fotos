@@ -156,7 +156,7 @@ const authTime =
   );
 
 const MAX_AGE =
-  1 * 60 * 60 * 1000; // 12 horas
+  1 * 60 * 60 * 1000; // 1 hora
 
 if (
   auth !== "ok" ||
@@ -169,6 +169,11 @@ if (
   window.location.href = "index.html";
 
 }
+
+sessionStorage.setItem(
+  "boda_auth_time",
+  Date.now()
+);
 
 const API =
 "https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/gallery-files";
