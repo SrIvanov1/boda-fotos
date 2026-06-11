@@ -147,8 +147,16 @@ async function login() {
 
   if (res.ok) {
 
-    sessionStorage.setItem("boda_auth", "ok");
-
+    sessionStorage.setItem(
+      "boda_auth",
+      "ok"
+    );
+    
+    sessionStorage.setItem(
+      "boda_auth_time",
+      Date.now()
+    );
+    
     location.reload();
 
   } else {
