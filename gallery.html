@@ -139,6 +139,10 @@ h1{
 
 <script>
 
+if (sessionStorage.getItem("boda_auth") !== "ok") {
+  window.location.href = "index.html";
+}
+
 const API =
 "https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/gallery-files";
 
