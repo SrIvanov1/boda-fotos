@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Boda 💍 - Fotos</title>
+  <title>Boda 💍 - Fotos y Vídeos</title>
 
   <style>
     body {
@@ -110,7 +110,7 @@
   <div class="bar" id="bar"></div>
 </div>
 
-<button onclick="upload()">Subir fotos</button>
+<button onclick="upload()">Subir archivos</button>
 
 <p id="status"></p>
 
@@ -172,8 +172,14 @@ function removeFile(index) {
 }
 
 async function upload() {
+  if (selectedFiles.length > 10) {
+    status.innerText =
+      "Máximo 10 archivos por subida 📷";
+    return;
+  }
+  
   if (!selectedFiles.length) {
-    status.innerText = "Selecciona fotos primero 📷";
+    status.innerText = "Selecciona archivos primero 📷";
     return;
   }
 
@@ -198,7 +204,7 @@ async function upload() {
     bar.style.width = progress + "%";
   }
 
-  status.innerText = "¡Fotos subidas! 🎉 Gracias ❤️";
+  status.innerText = "¡Archivos subidos! 🎉 Gracias ❤️";
   selectedFiles = [];
   preview.innerHTML = "";
 }
