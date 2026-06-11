@@ -7,6 +7,15 @@
 <title>💍 Galería de la boda</title>
 
 <style>
+.selector {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  z-index: 2;
+}
 
 body{
   margin:0;
@@ -90,6 +99,14 @@ h1{
 
 <h1>📸 Nuestra boda</h1>
 
+<div style="padding:10px; text-align:center;">
+  <p id="selectedCount">0 seleccionados</p>
+
+  <button onclick="downloadSelected()">
+    ⬇ Descargar seleccionados
+  </button>
+</div>
+
 <div id="gallery" class="grid"></div>
 
 <div id="lightbox" class="lightbox">
@@ -106,6 +123,8 @@ h1{
 
 const API =
 "https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/gallery-files";
+
+const selected = new Set();
 
 async function loadGallery(){
 
@@ -155,15 +174,24 @@ async function loadGallery(){
     }
 
     card.innerHTML = `
-      ${media}
-
-      <div class="actions">
-        <button
-          class="download"
-          onclick="downloadFile('${file.url}','${file.name}')"
+      <div style="position:relative">
+    
+        <input type="checkbox"
+          class="selector"
+          onchange="toggleSelect('${file.url}','${file.name}', this.checked)"
         >
-          ⬇ Descargar
-        </button>
+    
+        ${media}
+    
+        <div class="actions">
+          <button
+            class="download"
+            onclick="downloadFile('${file.url}','${file.name}')"
+          >
+            ⬇ Descargar
+          </button>
+        </div>
+    
       </div>
     `;
 
@@ -237,9 +265,44 @@ async function downloadFile(url, filename) {
   }
 }
 
+function toggleSelect(url, name, checked) {
+  if (checked) {
+    selected.add(JSON.stringify({ url, name }));
+  } else {
+    selected.forEach(item => {
+      const obj = JSON.parse(item);
+      if (obj.url === url) selected.delete(item);
+    });
+  }
+
+  document.getElementById("selectedCount").innerText =
+    `${selected.size} seleccionados`;
+}
+
+async function downloadSelected() {
+
+  if (selected.size === 0) {
+    alert("Selecciona archivos");
+    return;
+  }
+
+  if (selected.size > 6) {
+    alert("Máximo 6 archivos");
+    return;
+  }
+
+  const items = Array.from(selected).map(i => JSON.parse(i));
+
+  for (const file of items) {
+    await downloadFile(file.url, file.name);
+    await new Promise(r => setTimeout(r, 400));
+  }
+}
+
 loadGallery();
 
 </script>
 
 </body>
 </html>
+
