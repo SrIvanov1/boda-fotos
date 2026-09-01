@@ -1,3 +1,4 @@
+```html
 <!doctype html>
 <html>
 <head>
@@ -84,7 +85,11 @@
 
   <p>Introduce la contraseña</p>
 
-  <input type="password" id="password" placeholder="Contraseña">
+  <input
+    type="password"
+    id="password"
+    placeholder="Contraseña"
+  >
 
   <br>
 
@@ -100,14 +105,18 @@
   <div class="container">
 
     <h1>💍 Nuestra boda</h1>
-    <p>Comparte o mira los recuerdos del gran día</p>
+
+    <p>
+      Comparte o mira los recuerdos del gran día
+    </p>
 
     <a href="upload.html">
       <div class="card">
         <div class="emoji">📤</div>
-        <h2>Subir fotos</h2>
         <h2>Subir archivos</h2>
-        <p>Haz fotos y vídeos y compártelos con nosotros</p>
+        <p>
+          Haz fotos y vídeos y compártelos con nosotros
+        </p>
       </div>
     </a>
 
@@ -115,7 +124,9 @@
       <div class="card">
         <div class="emoji">🖼</div>
         <h2>Ver galería</h2>
-        <p>Mira todas las fotos y vídeos de los invitados</p>
+        <p>
+          Mira todas las fotos y vídeos de los invitados
+        </p>
       </div>
     </a>
 
@@ -126,42 +137,190 @@
 <script>
 
 const LOGIN_URL =
-"https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/login";
+  "https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/login";
 
-/* si ya está logueado */
-if (sessionStorage.getItem("boda_auth") === "ok") {
-  document.getElementById("loginScreen").style.display = "none";
-  document.getElementById("siteContent").style.display = "block";
+const SESSION_DURATION = 30 * 60 * 1000;
+
+
+/* ==========================================
+   COMPROBAR SESIÓN
+========================================== */
+
+function isSessionValid() {
+
+  const auth =
+    sessionStorage.getItem("boda_auth");
+
+  const expiresAt =
+    Number(
+      sessionStorage.getItem(
+        "boda_auth_expires"
+      )
+    );
+
+  if (
+    auth !== "ok" ||
+    !expiresAt
+  ) {
+    return false;
+  }
+
+  if (Date.now() >= expiresAt) {
+
+    logout();
+
+    return false;
+  }
+
+  return true;
 }
 
-async function login() {
 
-  const password = document.getElementById("password").value;
+/* ==========================================
+   MOSTRAR WEB O LOGIN
+========================================== */
 
-  const res = await fetch(LOGIN_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ password })
-  });
+function checkSession() {
 
-  if (res.ok) {
+  if (isSessionValid()) {
 
-    sessionStorage.setItem("boda_auth", "ok");
+    document.getElementById(
+      "loginScreen"
+    ).style.display = "none";
 
-    location.reload();
+    document.getElementById(
+      "siteContent"
+    ).style.display = "block";
 
   } else {
 
-    document.getElementById("loginError").innerText =
-      "❌ Contraseña incorrecta";
+    document.getElementById(
+      "loginScreen"
+    ).style.display = "block";
 
+    document.getElementById(
+      "siteContent"
+    ).style.display = "none";
   }
 }
+
+
+/* ==========================================
+   LOGIN
+========================================== */
+
+async function login() {
+
+  const password =
+    document.getElementById(
+      "password"
+    ).value;
+
+  const res = await fetch(
+    LOGIN_URL,
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type":
+          "application/json"
+      },
+
+      body: JSON.stringify({
+        password
+      })
+    }
+  );
+
+  if (res.ok) {
+
+    const expiresAt =
+      Date.now() + SESSION_DURATION;
+
+    sessionStorage.setItem(
+      "boda_auth",
+      "ok"
+    );
+
+    sessionStorage.setItem(
+      "boda_auth_expires",
+      expiresAt.toString()
+    );
+
+    checkSession();
+
+  } else {
+
+    document.getElementById(
+      "loginError"
+    ).innerText =
+      "❌ Contraseña incorrecta";
+  }
+}
+
+
+/* ==========================================
+   LOGOUT
+========================================== */
+
+function logout() {
+
+  sessionStorage.removeItem(
+    "boda_auth"
+  );
+
+  sessionStorage.removeItem(
+    "boda_auth_expires"
+  );
+}
+
+
+/* ==========================================
+   INICIALIZAR
+========================================== */
+
+checkSession();
+
+
+/* ==========================================
+   COMPROBAR EXPIRACIÓN MIENTRAS ESTÁ ABIERTA
+========================================== */
+
+setInterval(() => {
+
+  if (
+    sessionStorage.getItem(
+      "boda_auth"
+    ) === "ok"
+  ) {
+
+    if (!isSessionValid()) {
+
+      window.location.href =
+        "index.html";
+    }
+  }
+
+}, 5000);
+
+
+/* ENTER PARA HACER LOGIN */
+
+document
+  .getElementById("password")
+  .addEventListener(
+    "keydown",
+    function(event) {
+
+      if (event.key === "Enter") {
+        login();
+      }
+    }
+  );
 
 </script>
 
 </body>
 </html>
+```
 
