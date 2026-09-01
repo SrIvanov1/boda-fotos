@@ -1,3 +1,4 @@
+```html
 <!doctype html>
 <html>
 <head>
@@ -33,7 +34,8 @@
       width: 100px;
     }
 
-    .item img {
+    .item img,
+    .item video {
       width: 100px;
       height: 100px;
       object-fit: cover;
@@ -51,11 +53,11 @@
       width: 26px;
       height: 26px;
       cursor: pointer;
-    
+
       display: flex;
       align-items: center;
       justify-content: center;
-    
+
       font-size: 16px;
       line-height: 1;
       padding: 0;
@@ -100,6 +102,7 @@
 
 <div class="dropzone" id="dropzone">
   <p>Arrastra fotos/vídeos aquí o selecciónalos 👇</p>
+
   <input
     type="file"
     id="file"
@@ -119,72 +122,116 @@
 <p id="status"></p>
 
 <script>
-if (sessionStorage.getItem("boda_auth") !== "ok") {
+
+/* ==========================================
+   COMPROBAR SESIÓN
+========================================== */
+
+function isSessionValid() {
+
+  const auth =
+    sessionStorage.getItem("boda_auth");
+
+  const expiresAt =
+    Number(
+      sessionStorage.getItem(
+        "boda_auth_expires"
+      )
+    );
+
+  if (
+    auth !== "ok" ||
+    !expiresAt ||
+    Date.now() >= expiresAt
+  ) {
+
+    sessionStorage.removeItem("boda_auth");
+    sessionStorage.removeItem("boda_auth_expires");
+
+    return false;
+  }
+
+  return true;
+}
+
+
+/* Si no hay sesión válida, volver al login */
+
+if (!isSessionValid()) {
   window.location.href = "index.html";
 }
 
-const auth =
-  sessionStorage.getItem("boda_auth");
 
-const authTime =
-  Number(
-    sessionStorage.getItem("boda_auth_time")
-  );
+/* ==========================================
+   CONFIGURACIÓN
+========================================== */
 
-const MAX_AGE =
-  1 * 60 * 60 * 1000; // 1 hora
+const URL =
+  "https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/upload-photo";
 
-if (
-  auth !== "ok" ||
-  !authTime ||
-  Date.now() - authTime > MAX_AGE
-) {
-
-  sessionStorage.clear();
-
-  window.location.href = "index.html";
-
-}
-
-sessionStorage.setItem(
-  "boda_auth_time",
-  Date.now()
-);
-
-const URL = "https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/upload-photo";
-const TOKEN = "Hl2GHLcUPXQxI0yez1KDbdg3ULkgcFOlLdXLuhxeaEaBk3W6jxgamcwz7UF8ct3F";
+const TOKEN =
+  "Hl2GHLcUPXQxI0yez1KDbdg3ULkgcFOlLdXLuhxeaEaBk3W6jxgamcwz7UF8ct3F";
 
 let selectedFiles = [];
 
-const input = document.getElementById("file");
-const preview = document.getElementById("preview");
-const status = document.getElementById("status");
-const bar = document.getElementById("bar");
-const dropzone = document.getElementById("dropzone");
+const input =
+  document.getElementById("file");
 
-input.addEventListener("change", (e) => {
-  addFiles(e.target.files);
-});
+const preview =
+  document.getElementById("preview");
 
-dropzone.addEventListener("dragover", (e) => {
-  e.preventDefault();
-});
+const status =
+  document.getElementById("status");
 
-dropzone.addEventListener("drop", (e) => {
-  e.preventDefault();
-  addFiles(e.dataTransfer.files);
-});
+const bar =
+  document.getElementById("bar");
+
+const dropzone =
+  document.getElementById("dropzone");
+
+
+/* ==========================================
+   SELECCIONAR ARCHIVOS
+========================================== */
+
+input.addEventListener(
+  "change",
+  (e) => {
+    addFiles(e.target.files);
+  }
+);
+
+
+dropzone.addEventListener(
+  "dragover",
+  (e) => {
+    e.preventDefault();
+  }
+);
+
+
+dropzone.addEventListener(
+  "drop",
+  (e) => {
+    e.preventDefault();
+    addFiles(e.dataTransfer.files);
+  }
+);
+
 
 function addFiles(files) {
 
-  const incoming = Array.from(files);
+  const incoming =
+    Array.from(files);
 
   if (
     selectedFiles.length +
     incoming.length > 10
   ) {
+
     status.innerText =
       "⚠️ Máximo 10 archivos por subida";
+
     return;
   }
 
@@ -194,71 +241,251 @@ function addFiles(files) {
   render();
 }
 
+
+/* ==========================================
+   PREVISUALIZACIÓN
+========================================== */
+
 function render() {
+
   preview.innerHTML = "";
 
-  selectedFiles.forEach((file, index) => {
-    const reader = new FileReader();
+  selectedFiles.forEach(
+    (file, index) => {
 
-    reader.onload = (e) => {
-      const div = document.createElement("div");
+      const div =
+        document.createElement("div");
+
       div.className = "item";
 
-      div.innerHTML = `
-        <img src="${e.target.result}" />
-        <button class="remove" onclick="removeFile(${index})">×</button>
-      `;
+      const objectUrl =
+        URL.createObjectURL(file);
+
+      if (
+        file.type.startsWith("video/")
+      ) {
+
+        div.innerHTML = `
+          <video
+            src="${objectUrl}"
+            muted
+            playsinline
+          ></video>
+
+          <button
+            class="remove"
+            onclick="removeFile(${index})"
+          >
+            ×
+          </button>
+        `;
+
+      } else {
+
+        div.innerHTML = `
+          <img
+            src="${objectUrl}"
+          />
+
+          <button
+            class="remove"
+            onclick="removeFile(${index})"
+          >
+            ×
+          </button>
+        `;
+      }
 
       preview.appendChild(div);
-    };
-    reader.readAsDataURL(file);
-  });
+    }
+  );
 }
 
+
 function removeFile(index) {
-  selectedFiles.splice(index, 1);
+
+  selectedFiles.splice(
+    index,
+    1
+  );
+
   render();
 }
 
+
+/* ==========================================
+   SUBIR ARCHIVOS
+========================================== */
+
 async function upload() {
-  if (selectedFiles.length > 10) {
+
+  if (!isSessionValid()) {
+
+    window.location.href =
+      "index.html";
+
+    return;
+  }
+
+
+  if (
+    selectedFiles.length > 10
+  ) {
+
     status.innerText =
       "Máximo 10 archivos por subida 📷";
-    return;
-  }
-  
-  if (!selectedFiles.length) {
-    status.innerText = "Selecciona archivos primero 📷";
+
     return;
   }
 
-  status.innerText = "Subiendo... ⏳";
+
+  if (!selectedFiles.length) {
+
+    status.innerText =
+      "Selecciona archivos primero 📷";
+
+    return;
+  }
+
+
+  status.innerText =
+    "Subiendo... ⏳";
+
   bar.style.width = "0%";
 
-  for (let i = 0; i < selectedFiles.length; i++) {
-    const file = selectedFiles[i];
 
-    const form = new FormData();
-    form.append("file", file);
+  try {
 
-    await fetch(URL, {
-      method: "POST",
-      headers: {
-        "x-upload-token": TOKEN,
-        "x-boda-auth": sessionStorage.getItem("boda_auth")
-      },
-      body: form
-    });
+    for (
+      let i = 0;
+      i < selectedFiles.length;
+      i++
+    ) {
 
-    const progress = ((i + 1) / selectedFiles.length) * 100;
-    bar.style.width = progress + "%";
+      if (!isSessionValid()) {
+
+        window.location.href =
+          "index.html";
+
+        return;
+      }
+
+
+      const file =
+        selectedFiles[i];
+
+
+      const form =
+        new FormData();
+
+      form.append(
+        "file",
+        file
+      );
+
+
+      const response =
+        await fetch(
+          URL,
+          {
+            method: "POST",
+
+            headers: {
+              "x-upload-token":
+                TOKEN,
+
+              "x-boda-auth":
+                sessionStorage.getItem(
+                  "boda_auth"
+                )
+            },
+
+            body: form
+          }
+        );
+
+
+      if (response.status === 401) {
+
+        sessionStorage.removeItem(
+          "boda_auth"
+        );
+
+        sessionStorage.removeItem(
+          "boda_auth_expires"
+        );
+
+        window.location.href =
+          "index.html";
+
+        return;
+      }
+
+
+      if (!response.ok) {
+
+        const errorText =
+          await response.text();
+
+        console.error(
+          "UPLOAD ERROR:",
+          errorText
+        );
+
+        throw new Error(
+          `Error subiendo ${file.name}`
+        );
+      }
+
+
+      const progress =
+        (
+          (i + 1) /
+          selectedFiles.length
+        ) * 100;
+
+      bar.style.width =
+        progress + "%";
+    }
+
+
+    status.innerText =
+      "¡Archivos subidos! 🎉 Gracias ❤️";
+
+    selectedFiles = [];
+
+    preview.innerHTML = "";
+
+    input.value = "";
+
+
+  } catch (e) {
+
+    console.error(e);
+
+    status.innerText =
+      "❌ Hubo un error subiendo algún archivo. Inténtalo de nuevo.";
+  }
+}
+
+
+/* ==========================================
+   EXPIRACIÓN AUTOMÁTICA
+========================================== */
+
+setInterval(() => {
+
+  if (!isSessionValid()) {
+
+    window.location.href =
+      "index.html";
   }
 
-  status.innerText = "¡Archivos subidos! 🎉 Gracias ❤️";
-  selectedFiles = [];
-  preview.innerHTML = "";
-}
+}, 5000);
+
 </script>
 
 </body>
 </html>
+```
+
