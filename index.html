@@ -1,173 +1,117 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Boda 💍</title>
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-  <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      background: #fafafa;
-      text-align: center;
-    }
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-boda-auth",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+};
 
-    .container {
-      padding: 40px 20px;
-    }
+Deno.serve(async (req) => {
 
-    h1 {
-      margin-bottom: 10px;
-    }
-
-    p {
-      color: #666;
-      margin-bottom: 30px;
-    }
-
-    .card {
-      background: white;
-      padding: 20px;
-      margin: 15px auto;
-      max-width: 320px;
-      border-radius: 15px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .card:hover {
-      transform: scale(1.03);
-    }
-
-    .emoji {
-      font-size: 40px;
-    }
-
-    a {
-      text-decoration: none;
-      color: inherit;
-    }
-
-    input {
-      padding: 10px;
-      font-size: 16px;
-      margin-top: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-
-    button {
-      margin-top: 15px;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 8px;
-      background: black;
-      color: white;
-      cursor: pointer;
-    }
-
-    #loginError {
-      color: red;
-      margin-top: 10px;
-    }
-  </style>
-</head>
-
-<body>
-
-<!-- LOGIN -->
-<div id="loginScreen">
-
-  <h1>💍 Nuestra boda</h1>
-
-  <p>Introduce la contraseña</p>
-
-  <input type="password" id="password" placeholder="Contraseña">
-
-  <br>
-
-  <button onclick="login()">Entrar</button>
-
-  <p id="loginError"></p>
-
-</div>
-
-<!-- CONTENIDO -->
-<div id="siteContent" style="display:none">
-
-  <div class="container">
-
-    <h1>💍 Nuestra boda</h1>
-    <p>Comparte o mira los recuerdos del gran día</p>
-
-    <a href="upload.html">
-      <div class="card">
-        <div class="emoji">📤</div>
-        <h2>Subir archivos</h2>
-        <p>Haz fotos y vídeos y compártelos con nosotros</p>
-      </div>
-    </a>
-
-    <a href="gallery.html">
-      <div class="card">
-        <div class="emoji">🖼</div>
-        <h2>Ver galería</h2>
-        <p>Mira todas las fotos y vídeos de los invitados</p>
-      </div>
-    </a>
-
-  </div>
-
-</div>
-
-<script>
-
-const LOGIN_URL =
-"https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/login";
-
-/* si ya está logueado */
-if (sessionStorage.getItem("boda_auth") === "ok") {
-  document.getElementById("loginScreen").style.display = "none";
-  document.getElementById("siteContent").style.display = "block";
-}
-
-async function login() {
-
-  const password = document.getElementById("password").value;
-
-  const res = await fetch(LOGIN_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ password })
-  });
-
-  if (res.ok) {
-
-    sessionStorage.setItem(
-      "boda_auth",
-      "ok"
-    );
-    
-    sessionStorage.setItem(
-      "boda_auth_time",
-      Date.now()
-    );
-    
-    location.reload();
-
-  } else {
-
-    document.getElementById("loginError").innerText =
-      "❌ Contraseña incorrecta";
-
+  // CORS
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
   }
-}
 
-</script>
+  // Comprobar contraseña
+  const auth = req.headers.get("x-boda-auth");
 
-</body>
-</html>
+  if (auth !== "ok") {
+    return new Response("Unauthorized", {
+      status: 401,
+      headers: corsHeaders,
+    });
+  }
+
+  try {
+
+    const { createClient } = await import(
+      "npm:@supabase/supabase-js@2"
+    );
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const { data: files, error } = await supabase.storage
+      .from("fotos-boda")
+      .list("", {
+        limit: 1000,
+        sortBy: {
+          column: "created_at",
+          order: "desc",
+        },
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    const result = [];
+
+    for (const file of files || []) {
+
+      if (
+        !file.name ||
+        file.name === ".emptyFolderPlaceholder"
+      ) {
+        continue;
+      }
+
+      const { data: signedData, error: signedError } =
+        await supabase.storage
+          .from("fotos-boda")
+          .createSignedUrl(
+            file.name,
+            60 * 60
+          );
+
+      if (signedError) {
+        console.error(
+          "Error creando signed URL:",
+          signedError
+        );
+        continue;
+      }
+
+      result.push({
+        name: file.name,
+        url: signedData.signedUrl,
+        isVideo: /\.(mp4|mov|webm)$/i.test(file.name),
+      });
+    }
+
+    return new Response(
+      JSON.stringify(result),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+  } catch (e) {
+
+    console.error("GALLERY ERROR:", e);
+
+    return new Response(
+      JSON.stringify({
+        error: String(e),
+      }),
+      {
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+  }
+});
