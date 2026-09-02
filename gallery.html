@@ -1,4 +1,5 @@
 <!doctype html>
+
 <html>
 <head>
 <meta charset="utf-8">
@@ -91,6 +92,7 @@ h1{
   cursor:pointer;
 }
 </style>
+
 </head>
 
 <body>
@@ -142,14 +144,15 @@ h1{
 
 <script>
 
-/* ==========================================
-   COMPROBAR SESIÓN
-========================================== */
+function logout() {
+  sessionStorage.removeItem("boda_token");
+  sessionStorage.removeItem("boda_auth_expires");
+}
 
 function isSessionValid() {
 
-  const auth =
-    sessionStorage.getItem("boda_auth");
+  const token =
+    sessionStorage.getItem("boda_token");
 
   const expiresAt =
     Number(
@@ -157,88 +160,83 @@ function isSessionValid() {
     );
 
   if (
-    auth !== "ok" ||
+    !token ||
     !expiresAt ||
     Date.now() >= expiresAt
   ) {
-
-    sessionStorage.removeItem("boda_auth");
-    sessionStorage.removeItem("boda_auth_expires");
-
+    logout();
     return false;
   }
 
   return true;
 }
 
-
-/* Si no hay sesión válida, volver al login */
-
 if (!isSessionValid()) {
   window.location.href = "index.html";
 }
-
-
-/* ==========================================
-   API
-========================================== */
 
 const API =
   "https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/gallery-files";
 
 const selected = new Set();
 
-
-/* ==========================================
-   CARGAR GALERÍA
-========================================== */
-
-async function loadGallery(){
+async function loadGallery() {
 
   try {
 
+    const token =
+      sessionStorage.getItem("boda_token");
+
     const res = await fetch(API, {
+      method: "GET",
       headers: {
         "Authorization":
-          "Bearer " +
-          sessionStorage.getItem(
-            "boda_token"
-          )
+          "Bearer " + token
       }
     });
 
     if (res.status === 401) {
 
-      sessionStorage.removeItem("boda_auth");
-      sessionStorage.removeItem("boda_auth_expires");
+      logout();
 
-      window.location.href = "index.html";
+      window.location.href =
+        "index.html";
+
       return;
     }
 
     if (!res.ok) {
 
-      const err = await res.text();
+      const err =
+        await res.text();
 
       console.error(
         "GALERÍA ERROR:",
         err
       );
 
-      document.getElementById("gallery").innerHTML =
+      document.getElementById(
+        "gallery"
+      ).innerHTML =
         "<p>No se pudo cargar la galería.</p>";
 
       return;
     }
 
-    const files = await res.json();
+    const files =
+      await res.json();
 
     const gallery =
-      document.getElementById("gallery");
+      document.getElementById(
+        "gallery"
+      );
 
     gallery.innerHTML = "";
 
-    if (!Array.isArray(files) || files.length === 0) {
+    if (
+      !Array.isArray(files) ||
+      files.length === 0
+    ) {
 
       gallery.innerHTML =
         "<p>No hay fotos ni vídeos todavía.</p>";
@@ -255,7 +253,7 @@ async function loadGallery(){
 
       let media = "";
 
-      if(file.isVideo){
+      if (file.isVideo) {
 
         media = `
           <video
@@ -276,7 +274,6 @@ async function loadGallery(){
             onclick="openImage('${file.url}')"
           >
         `;
-
       }
 
       card.innerHTML = `
@@ -312,7 +309,6 @@ async function loadGallery(){
       `;
 
       gallery.appendChild(card);
-
     });
 
   } catch (e) {
@@ -322,30 +318,31 @@ async function loadGallery(){
       e
     );
 
-    document.getElementById("gallery").innerHTML =
+    document.getElementById(
+      "gallery"
+    ).innerHTML =
       "<p>No se pudo cargar la galería.</p>";
   }
 }
 
+function openImage(url) {
 
-/* ==========================================
-   LIGHTBOX
-========================================== */
-
-function openImage(url){
-
-  document.getElementById("viewer").innerHTML = `
+  document.getElementById(
+    "viewer"
+  ).innerHTML = `
     <img src="${url}">
   `;
 
-  document.getElementById("lightbox")
-    .style.display = "flex";
+  document.getElementById(
+    "lightbox"
+  ).style.display = "flex";
 }
 
+function openVideo(url) {
 
-function openVideo(url){
-
-  document.getElementById("viewer").innerHTML = `
+  document.getElementById(
+    "viewer"
+  ).innerHTML = `
     <video
       controls
       autoplay
@@ -355,30 +352,28 @@ function openVideo(url){
     </video>
   `;
 
-  document.getElementById("lightbox")
-    .style.display = "flex";
+  document.getElementById(
+    "lightbox"
+  ).style.display = "flex";
 }
 
+function closeLightbox() {
 
-function closeLightbox(){
+  document.getElementById(
+    "lightbox"
+  ).style.display = "none";
 
-  document.getElementById("lightbox")
-    .style.display = "none";
-
-  document.getElementById("viewer")
-    .innerHTML = "";
+  document.getElementById(
+    "viewer"
+  ).innerHTML = "";
 }
-
-
-/* ==========================================
-   SELECCIÓN
-========================================== */
 
 function clearSelection() {
 
   selected.clear();
 
-  document.querySelectorAll(".selector")
+  document
+    .querySelectorAll(".selector")
     .forEach(cb => {
       cb.checked = false;
     });
@@ -389,31 +384,22 @@ function clearSelection() {
     "☑ 0 archivos seleccionados";
 }
 
-
 function toggleSelect(
   url,
   name,
   checked
 ) {
 
+  const item =
+    JSON.stringify({
+      url,
+      name
+    });
+
   if (checked) {
-
-    selected.add(
-      JSON.stringify({
-        url,
-        name
-      })
-    );
-
+    selected.add(item);
   } else {
-
-    selected.delete(
-      JSON.stringify({
-        url,
-        name
-      })
-    );
-
+    selected.delete(item);
   }
 
   document.getElementById(
@@ -421,11 +407,6 @@ function toggleSelect(
   ).innerText =
     `☑ ${selected.size} archivos seleccionados`;
 }
-
-
-/* ==========================================
-   DESCARGAR ARCHIVO
-========================================== */
 
 async function downloadFile(
   url,
@@ -447,7 +428,9 @@ async function downloadFile(
       await response.blob();
 
     const objectUrl =
-      window.URL.createObjectURL(blob);
+      window.URL.createObjectURL(
+        blob
+      );
 
     const a =
       document.createElement("a");
@@ -475,11 +458,6 @@ async function downloadFile(
   }
 }
 
-
-/* ==========================================
-   DESCARGAR SELECCIONADOS
-========================================== */
-
 async function downloadSelected() {
 
   if (selected.size === 0) {
@@ -501,7 +479,8 @@ async function downloadSelected() {
   }
 
   const items =
-    Array.from(selected)
+    Array
+      .from(selected)
       .map(item =>
         JSON.parse(item)
       );
@@ -521,11 +500,6 @@ async function downloadSelected() {
   clearSelection();
 }
 
-
-/* ==========================================
-   EXPIRACIÓN AUTOMÁTICA
-========================================== */
-
 setInterval(() => {
 
   if (!isSessionValid()) {
@@ -536,15 +510,9 @@ setInterval(() => {
 
 }, 5000);
 
-
-/* ==========================================
-   INICIAR
-========================================== */
-
 loadGallery();
 
 </script>
 
 </body>
 </html>
-
