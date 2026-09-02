@@ -199,8 +199,11 @@ async function loadGallery(){
 
     const res = await fetch(API, {
       headers: {
-        "x-boda-auth":
-          sessionStorage.getItem("boda_auth") || "none"
+        "Authorization":
+          "Bearer " +
+          sessionStorage.getItem(
+            "boda_token"
+          )
       }
     });
 
