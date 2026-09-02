@@ -146,16 +146,10 @@ const LOGIN_URL =
   "https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/login";
 
 
-/* ==========================================
-   COMPROBAR SESIÓN
-========================================== */
-
 function isSessionValid() {
 
   const token =
-    sessionStorage.getItem(
-      "boda_token"
-    );
+    sessionStorage.getItem("boda_token");
 
   const expiresAt =
     Number(
@@ -182,10 +176,6 @@ function isSessionValid() {
 }
 
 
-/* ==========================================
-   MOSTRAR WEB O LOGIN
-========================================== */
-
 function checkSession() {
 
   if (isSessionValid()) {
@@ -210,10 +200,6 @@ function checkSession() {
   }
 }
 
-
-/* ==========================================
-   LOGIN
-========================================== */
 
 async function login() {
 
@@ -298,10 +284,6 @@ async function login() {
 }
 
 
-/* ==========================================
-   LOGOUT
-========================================== */
-
 function logout() {
 
   sessionStorage.removeItem(
@@ -314,36 +296,36 @@ function logout() {
 }
 
 
-/* ==========================================
-   INICIALIZAR
-========================================== */
-
 checkSession();
 
 
-/* ==========================================
-   COMPROBAR EXPIRACIÓN MIENTRAS ESTÁ ABIERTA
-========================================== */
-
 setInterval(() => {
 
-  if (
+  const token =
     sessionStorage.getItem(
       "boda_token"
-    )
+    );
+
+  const expiresAt =
+    Number(
+      sessionStorage.getItem(
+        "boda_auth_expires"
+      )
+    );
+
+  if (
+    token &&
+    expiresAt &&
+    Date.now() >= expiresAt
   ) {
 
-    if (!isSessionValid()) {
+    logout();
 
-      window.location.href =
-        "index.html";
-    }
+    checkSession();
   }
 
 }, 5000);
 
-
-/* ENTER PARA HACER LOGIN */
 
 document
   .getElementById("password")
