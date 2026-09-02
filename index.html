@@ -1,4 +1,5 @@
 <!doctype html>
+
 <html>
 <head>
   <meta charset="utf-8" />
@@ -73,61 +74,67 @@
       margin-top: 10px;
     }
   </style>
+
 </head>
 
 <body>
 
 <!-- LOGIN -->
+
 <div id="loginScreen">
 
   <h1>💍 Nuestra boda</h1>
 
   <p>Introduce la contraseña</p>
 
-  <input
-    type="password"
-    id="password"
-    placeholder="Contraseña"
-  >
+<input
+type="password"
+id="password"
+placeholder="Contraseña"
+
+>
 
   <br>
 
-  <button onclick="login()">Entrar</button>
+<button onclick="login()">Entrar</button>
 
   <p id="loginError"></p>
 
 </div>
 
 <!-- CONTENIDO -->
+
 <div id="siteContent" style="display:none">
 
   <div class="container">
 
-    <h1>💍 Nuestra boda</h1>
+```
+<h1>💍 Nuestra boda</h1>
 
+<p>
+  Comparte o mira los recuerdos del gran día
+</p>
+
+<a href="upload.html">
+  <div class="card">
+    <div class="emoji">📤</div>
+    <h2>Subir archivos</h2>
     <p>
-      Comparte o mira los recuerdos del gran día
+      Haz fotos y vídeos y compártelos con nosotros
     </p>
+  </div>
+</a>
 
-    <a href="upload.html">
-      <div class="card">
-        <div class="emoji">📤</div>
-        <h2>Subir archivos</h2>
-        <p>
-          Haz fotos y vídeos y compártelos con nosotros
-        </p>
-      </div>
-    </a>
-
-    <a href="gallery.html">
-      <div class="card">
-        <div class="emoji">🖼</div>
-        <h2>Ver galería</h2>
-        <p>
-          Mira todas las fotos y vídeos de los invitados
-        </p>
-      </div>
-    </a>
+<a href="gallery.html">
+  <div class="card">
+    <div class="emoji">🖼</div>
+    <h2>Ver galería</h2>
+    <p>
+      Mira todas las fotos y vídeos de los invitados
+    </p>
+  </div>
+</a>
+```
 
   </div>
 
@@ -138,8 +145,6 @@
 const LOGIN_URL =
   "https://uceerskxdlwoyzwenzrm.supabase.co/functions/v1/login";
 
-const SESSION_DURATION = 30 * 60 * 1000;
-
 
 /* ==========================================
    COMPROBAR SESIÓN
@@ -147,8 +152,10 @@ const SESSION_DURATION = 30 * 60 * 1000;
 
 function isSessionValid() {
 
-  const auth =
-    sessionStorage.getItem("boda_auth");
+  const token =
+    sessionStorage.getItem(
+      "boda_token"
+    );
 
   const expiresAt =
     Number(
@@ -158,7 +165,7 @@ function isSessionValid() {
     );
 
   if (
-    auth !== "ok" ||
+    !token ||
     !expiresAt
   ) {
     return false;
@@ -215,45 +222,78 @@ async function login() {
       "password"
     ).value;
 
-  const res = await fetch(
-    LOGIN_URL,
-    {
-      method: "POST",
+  const loginError =
+    document.getElementById(
+      "loginError"
+    );
 
-      headers: {
-        "Content-Type":
-          "application/json"
-      },
+  loginError.innerText = "";
 
-      body: JSON.stringify({
-        password
-      })
+  try {
+
+    const res = await fetch(
+      LOGIN_URL,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+
+        body: JSON.stringify({
+          password
+        })
+      }
+    );
+
+    if (!res.ok) {
+
+      loginError.innerText =
+        "❌ Contraseña incorrecta";
+
+      return;
     }
-  );
 
-  if (res.ok) {
+    const data =
+      await res.json();
 
-    const expiresAt =
-      Date.now() + SESSION_DURATION;
+    if (
+      !data.token ||
+      !data.expiresAt
+    ) {
+
+      loginError.innerText =
+        "❌ Error iniciando sesión";
+
+      return;
+    }
 
     sessionStorage.setItem(
-      "boda_auth",
-      "ok"
+      "boda_token",
+      data.token
     );
 
     sessionStorage.setItem(
       "boda_auth_expires",
-      expiresAt.toString()
+      String(data.expiresAt)
     );
+
+    document.getElementById(
+      "password"
+    ).value = "";
 
     checkSession();
 
-  } else {
+  } catch (e) {
 
-    document.getElementById(
-      "loginError"
-    ).innerText =
-      "❌ Contraseña incorrecta";
+    console.error(
+      "LOGIN ERROR:",
+      e
+    );
+
+    loginError.innerText =
+      "❌ No se pudo conectar. Inténtalo de nuevo.";
   }
 }
 
@@ -265,7 +305,7 @@ async function login() {
 function logout() {
 
   sessionStorage.removeItem(
-    "boda_auth"
+    "boda_token"
   );
 
   sessionStorage.removeItem(
@@ -289,8 +329,8 @@ setInterval(() => {
 
   if (
     sessionStorage.getItem(
-      "boda_auth"
-    ) === "ok"
+      "boda_token"
+    )
   ) {
 
     if (!isSessionValid()) {
